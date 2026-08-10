@@ -3,10 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Blow Out the Birthday Candle!</title>
+    <title>Happy Birthday My Love! ❤️</title>
+    <!-- Canvas Confetti Library -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
+        * {
+            box-sizing: border-box;
+        }
+
         body {
-            background-color: #111;
+            background-color: #0f0a14;
             color: #fff;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             display: flex;
@@ -16,15 +22,73 @@
             min-height: 100vh;
             margin: 0;
             user-select: none;
+            overflow: hidden;
+            position: relative;
+            transition: background 1s ease;
+        }
+
+        body.party-mode {
+            background-color: #260a1d;
+        }
+
+        /* Floating Hearts Container */
+        .bg-hearts {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .heart-particle {
+            position: absolute;
+            bottom: -50px;
+            color: rgba(255, 65, 108, 0.4);
+            font-size: 20px;
+            animation: floatUp linear infinite;
+            filter: drop-shadow(0 0 5px rgba(255, 65, 108, 0.6));
+        }
+
+        @keyframes floatUp {
+            0% {
+                transform: translateY(0) rotate(0deg) scale(0.8);
+                opacity: 0;
+            }
+            20% {
+                opacity: 0.7;
+            }
+            80% {
+                opacity: 0.7;
+            }
+            100% {
+                transform: translateY(-110vh) rotate(360deg) scale(1.3);
+                opacity: 0;
+            }
+        }
+
+        /* Foreground Content */
+        .content {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
         }
 
         h1 {
-            margin-bottom: 10px;
+            margin-bottom: 5px;
             text-align: center;
+            font-size: 2.3rem;
+            color: #ff416c;
+            text-shadow: 0 0 15px rgba(255, 65, 108, 0.5);
         }
 
         p {
-            color: #aaa;
+            color: #d1a8c5;
             margin-bottom: 20px;
             text-align: center;
             max-width: 90%;
@@ -42,15 +106,15 @@
         }
 
         .flame {
-            width: 24px;
-            height: 36px;
+            width: 26px;
+            height: 40px;
             background: radial-gradient(ellipse at bottom, #ffeb3b 0%, #ff9800 60%, rgba(255,87,34,0) 100%);
             border-radius: 50% 50% 20% 20%;
             position: absolute;
-            top: -35px;
-            box-shadow: 0 0 20px #ff9800, 0 0 40px #ffeb3b;
+            top: -38px;
+            box-shadow: 0 0 25px #ff9800, 0 0 45px #ffeb3b;
             animation: flicker 0.1s infinite alternate;
-            transition: opacity 0.5s ease;
+            transition: opacity 0.4s ease;
         }
 
         .flame.off {
@@ -63,6 +127,28 @@
             100% { transform: scale(1.08) rotate(1deg); }
         }
 
+        /* Smoke Effect */
+        .smoke {
+            position: absolute;
+            top: -35px;
+            width: 8px;
+            height: 8px;
+            background: rgba(220, 200, 220, 0.6);
+            border-radius: 50%;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .smoke.active {
+            animation: rise 3s ease-out forwards;
+        }
+
+        @keyframes rise {
+            0% { opacity: 0.8; transform: translateY(0) scale(1); }
+            50% { opacity: 0.4; transform: translateY(-40px) scale(3); }
+            100% { opacity: 0; transform: translateY(-80px) scale(5); }
+        }
+
         .wick {
             width: 4px;
             height: 15px;
@@ -70,64 +156,94 @@
             margin-bottom: -2px;
         }
 
+        /* Romantic Gradient Candle */
         .candle-body {
             width: 60px;
             height: 160px;
-            background: linear-gradient(to right, #e06666, #ff9999, #e06666);
+            background: linear-gradient(to right, #ff4b2b, #ff416c, #ff4b2b);
             border-radius: 8px 8px 4px 4px;
-            box-shadow: inset 0 8px 10px rgba(255,255,255,0.4);
+            box-shadow: inset 0 8px 10px rgba(255, 255, 255, 0.4), 0 0 15px rgba(255, 65, 108, 0.3);
         }
 
         button {
-            padding: 12px 24px;
+            padding: 12px 28px;
             font-size: 16px;
-            background-color: #ff4081;
+            font-weight: bold;
+            background-color: #ff416c;
             color: white;
             border: none;
             border-radius: 25px;
             cursor: pointer;
-            box-shadow: 0 4px 15px rgba(255, 64, 129, 0.4);
+            box-shadow: 0 4px 15px rgba(255, 65, 108, 0.5);
             transition: transform 0.2s, background-color 0.2s;
         }
 
         button:hover {
-            background-color: #f50057;
+            background-color: #ff4b2b;
             transform: scale(1.05);
         }
 
         #status {
             margin-top: 25px;
             font-weight: bold;
-            color: #4caf50;
+            color: #ff758c;
             text-align: center;
         }
 
         .hint {
             font-size: 12px;
-            color: #666;
+            color: #8a6881;
             margin-top: 10px;
         }
     </style>
 </head>
 <body>
 
-    <h1>🎂 Happy Birthday! 🎂</h1>
-    <p>Click start, then blow hard into your mic (or tap the candle) to blow it out.</p>
+    <!-- Floating Background Hearts -->
+    <div class="bg-hearts" id="bgHearts"></div>
 
-    <button id="startBtn">Start Candle Detection</button>
+    <div class="content">
+        <h1>🎂 Happy Birthday My Love! ❤️</h1>
+        <p>Blow hard into your mic (or tap the candle) to blow out the candle!</p>
 
-    <div class="candle-container" id="candle">
-        <div class="flame" id="flame"></div>
-        <div class="wick"></div>
-        <div class="candle-body"></div>
+        <button id="startBtn">Click to Start Candle</button>
+
+        <div class="candle-container" id="candle">
+            <div class="flame" id="flame"></div>
+            <div class="smoke" id="smoke"></div>
+            <div class="wick"></div>
+            <div class="candle-body"></div>
+        </div>
+
+        <div id="status"></div>
+        <div class="hint">(If blowing doesn't work, tap the candle directly!)</div>
     </div>
 
-    <div id="status"></div>
-    <div class="hint">(If blowing doesn't work, tap the candle directly!)</div>
-
     <script>
+        // Generate Floating Background Hearts
+        const bgHearts = document.getElementById('bgHearts');
+        const heartSymbols = ['❤️', '💖', '💕', '💗', '💓'];
+
+        function createFloatingHearts() {
+            for (let i = 0; i < 20; i++) {
+                const heart = document.createElement('div');
+                heart.className = 'heart-particle';
+                heart.innerText = heartSymbols[Math.floor(Math.random() * heartSymbols.length)];
+                
+                // Random position, speed, size, and delay
+                heart.style.left = Math.random() * 100 + '%';
+                heart.style.animationDuration = (6 + Math.random() * 6) + 's';
+                heart.style.animationDelay = (Math.random() * 5) + 's';
+                heart.style.fontSize = (14 + Math.random() * 16) + 'px';
+
+                bgHearts.appendChild(heart);
+            }
+        }
+        createFloatingHearts();
+
         const startBtn = document.getElementById('startBtn');
         const flame = document.getElementById('flame');
+        const smoke = document.getElementById('smoke');
         const candle = document.getElementById('candle');
         const statusText = document.getElementById('status');
 
@@ -158,15 +274,15 @@
 
                 detectBlow();
             } catch (err) {
-                alert('Microphone access failed. You can still tap the candle to blow it out!');
                 startBtn.style.display = 'none';
-                statusText.innerText = "Mic blocked. Tap the candle to blow it out!";
+                statusText.innerText = "Mic blocked. Tap the candle directly to blow it out! ❤️";
             }
         });
 
-        // Backup Manual Trigger (Tap/Click Candle)
+        // Tap/Click Candle Manual Fallback
         candle.addEventListener('click', () => {
             if (!isBlownOut) {
+                startBtn.style.display = 'none';
                 triggerBlowOut();
             }
         });
@@ -196,48 +312,69 @@
         function triggerBlowOut() {
             isBlownOut = true;
             flame.classList.add('off');
-            statusText.innerText = "🎉 Candle blown out! Playing song (1 min)...";
+            smoke.classList.add('active');
+            document.body.classList.add('party-mode');
+
+            statusText.innerText = "🎉 Candle blown out! Playing song (1 min)... ❤️";
+            
+            // Launch Confetti with Heart shapes
+            launchHeartConfetti();
+
+            // Play Synth Song (Runs for ~60s)
             playLongHappyBirthday();
         }
 
-        // Web Audio Synthesizer - Plays for 60+ Seconds
+        function launchHeartConfetti() {
+            const duration = 4 * 1000;
+            const end = Date.now() + duration;
+
+            (function frame() {
+                confetti({
+                    particleCount: 4,
+                    angle: 60,
+                    spread: 55,
+                    origin: { x: 0 },
+                    colors: ['#ff416c', '#ff4b2b', '#ffffff', '#ff758c']
+                });
+                confetti({
+                    particleCount: 4,
+                    angle: 120,
+                    spread: 55,
+                    origin: { x: 1 },
+                    colors: ['#ff416c', '#ff4b2b', '#ffffff', '#ff758c']
+                });
+
+                if (Date.now() < end) {
+                    requestAnimationFrame(frame);
+                }
+            }());
+        }
+
+        // Web Audio Synthesizer - Loops for 60+ Seconds
         function playLongHappyBirthday() {
             const ctx = new (window.AudioContext || window.webkitAudioContext)();
             
             const notes = [
-                { note: 261.63, duration: 0.4 }, // C4
-                { note: 261.63, duration: 0.2 }, // C4
-                { note: 293.66, duration: 0.6 }, // D4
-                { note: 261.63, duration: 0.6 }, // C4
-                { note: 349.23, duration: 0.6 }, // F4
-                { note: 329.63, duration: 1.0 }, // E4
+                { note: 261.63, duration: 0.4 }, { note: 261.63, duration: 0.2 },
+                { note: 293.66, duration: 0.6 }, { note: 261.63, duration: 0.6 },
+                { note: 349.23, duration: 0.6 }, { note: 329.63, duration: 1.0 },
 
-                { note: 261.63, duration: 0.4 }, // C4
-                { note: 261.63, duration: 0.2 }, // C4
-                { note: 293.66, duration: 0.6 }, // D4
-                { note: 261.63, duration: 0.6 }, // C4
-                { note: 392.00, duration: 0.6 }, // G4
-                { note: 349.23, duration: 1.0 }, // F4
+                { note: 261.63, duration: 0.4 }, { note: 261.63, duration: 0.2 },
+                { note: 293.66, duration: 0.6 }, { note: 261.63, duration: 0.6 },
+                { note: 392.00, duration: 0.6 }, { note: 349.23, duration: 1.0 },
 
-                { note: 261.63, duration: 0.4 }, // C4
-                { note: 261.63, duration: 0.2 }, // C4
-                { note: 523.25, duration: 0.6 }, // C5
-                { note: 440.00, duration: 0.6 }, // A4
-                { note: 349.23, duration: 0.6 }, // F4
-                { note: 329.63, duration: 0.6 }, // E4
-                { note: 293.66, duration: 0.8 }, // D4
+                { note: 261.63, duration: 0.4 }, { note: 261.63, duration: 0.2 },
+                { note: 523.25, duration: 0.6 }, { note: 440.00, duration: 0.6 },
+                { note: 349.23, duration: 0.6 }, { note: 329.63, duration: 0.6 },
+                { note: 293.66, duration: 0.8 },
 
-                { note: 466.16, duration: 0.4 }, // Bb4
-                { note: 466.16, duration: 0.2 }, // Bb4
-                { note: 440.00, duration: 0.6 }, // A4
-                { note: 349.23, duration: 0.6 }, // F4
-                { note: 392.00, duration: 0.6 }, // G4
-                { note: 349.23, duration: 1.2 }  // F4
+                { note: 466.16, duration: 0.4 }, { note: 466.16, duration: 0.2 },
+                { note: 440.00, duration: 0.6 }, { note: 349.23, duration: 0.6 },
+                { note: 392.00, duration: 0.6 }, { note: 349.23, duration: 1.2 }
             ];
 
-            // Calculate loop count to guarantee at least 60 seconds
             const singleRunDuration = notes.reduce((total, item) => total + item.duration, 0);
-            const targetDuration = 60.0; // 60 seconds (1 minute)
+            const targetDuration = 60.0; 
             const repeatCount = Math.ceil(targetDuration / singleRunDuration);
 
             let currentTime = ctx.currentTime + 0.1;
@@ -265,5 +402,4 @@
         }
     </script>
 </body>
-  </html>
-  
+</html>
