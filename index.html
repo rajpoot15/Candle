@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blow Out the Birthday Candle!</title>
+    <style>
+        body {
+            background-color: #111;
+            color: #fff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            user-select: none;
+        }
+
+        h1 {
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        p {
+            color: #aaa;
+            margin-bottom: 20px;
+            text-align: center;
+            max-width: 90%;
+        }
+
+        .candle-container {
+            position: relative;
+            width: 80px;
+            height: 200px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            cursor: pointer;
+            margin-top: 30px;
+        }
+
+        .flame {
+            width: 24px;
+            height: 36px;
+            background: radial-gradient(ellipse at bottom, #ffeb3b 0%, #ff9800 60%, rgba(255,87,34,0) 100%);
+            border-radius: 50% 50% 20% 20%;
+            position: absolute;
+            top: -35px;
+            box-shadow: 0 0 20px #ff9800, 0 0 40px #ffeb3b;
+            animation: flicker 0.1s infinite alternate;
+            transition: opacity 0.5s ease;
+        }
+
+        .flame.off {
+            opacity: 0;
+            box-shadow: none;
+        }
+
+        @keyframes flicker {
+            0% { transform: scale(1) rotate(-1deg); }
+            100% { transform: scale(1.08) rotate(1deg); }
+        }
+
+        .wick {
+            width: 4px;
+            height: 15px;
+            background-color: #444;
+            margin-bottom: -2px;
+        }
+
+        .candle-body {
+            width: 60px;
+            height: 160px;
+            background: linear-gradient(to right, #e06666, #ff9999, #e06666);
+            border-radius: 8px 8px 4px 4px;
+            box-shadow: inset 0 8px 10px rgba(255,255,255,0.4);
+        }
+
+        button {
+            padding: 12px 24px;
+            font-size: 16px;
+            background-color: #ff4081;
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(255, 64, 129, 0.4);
+            transition: transform 0.2s, background-color 0.2s;
+        }
+
+        button:hover {
+            background-color: #f50057;
+            transform: scale(1.05);
+        }
+
+        #status {
+            margin-top: 25px;
+            font-weight: bold;
+            color: #4caf50;
+            text-align: center;
+        }
+
+        .hint {
+            font-size: 12px;
+            color: #666;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>🎂 Happy Birthday! 🎂</h1>
+    <p>Click start, then blow hard into your mic (or tap the candle) to blow it out.</p>
+
+    <button id="startBtn">Start Candle Detection</button>
+
+    <div class="candle-container" id="candle">
+        <div class="flame" id="flame"></div>
+        <div class="wick"></div>
+        <div class="candle-body"></div>
+    </div>
+
+    <div id="status"></div>
+    <div class="hint">(If blowing doesn't work, tap the candle directly!)</div>
+
+    <script>
+        const startBtn = document.getElementById('startBtn');
+        const flame = document.getElementById('flame');
+        const candle = document.getElementById('candle');
+        const statusText = document.getElementById('status');
+
+        let audioContext;
+        let microphone;
+        let analyser;
+        let isBlownOut = false;
+
+        startBtn.addEventListener('click', async () => {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ 
+                    audio: {
+                        echoCancellation: false,
+                        noiseSuppression: false,
+                        autoGainControl: false
+                    } 
+                });
+
+                startBtn.style.display = 'none';
+                statusText.innerText = "Microphone active! Blow hard into the mic...";
+
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                analyser = audioContext.createAnalyser();
+                microphone = audioContext.createMediaStreamSource(stream);
+                
+                analyser.fftSize = 256;
+                microphone.connect(analyser);
+
+                detectBlow();
+            } catch (err) {
+                alert('Microphone access failed. You can still tap the candle to blow it out!');
+                startBtn.style.display = 'none';
+                statusText.innerText = "Mic blocked. Tap the candle to blow it out!";
+            }
+        });
+
+        // Backup Manual Trigger (Tap/Click Candle)
+        candle.addEventListener('click', () => {
+            if (!isBlownOut) {
+                triggerBlowOut();
+            }
+        });
+
+        function detectBlow() {
+            if (isBlownOut) return;
+
+            const bufferLength = analyser.frequencyBinCount;
+            const dataArray = new Uint8Array(bufferLength);
+            analyser.getByteFrequencyData(dataArray);
+
+            let sum = 0;
+            for (let i = 0; i < bufferLength; i++) {
+                sum += dataArray[i];
+            }
+            let average = sum / bufferLength;
+
+            statusText.innerText = "Mic Level: " + Math.round(average) + " / Target: 20";
+
+            if (average > 20) { 
+                triggerBlowOut();
+            } else {
+                requestAnimationFrame(detectBlow);
+            }
+        }
+
+        function triggerBlowOut() {
+            isBlownOut = true;
+            flame.classList.add('off');
+            statusText.innerText = "🎉 Candle blown out! Playing song (1 min)...";
+            playLongHappyBirthday();
+        }
+
+        // Web Audio Synthesizer - Plays for 60+ Seconds
+        function playLongHappyBirthday() {
+            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+            
+            const notes = [
+                { note: 261.63, duration: 0.4 }, // C4
+                { note: 261.63, duration: 0.2 }, // C4
+                { note: 293.66, duration: 0.6 }, // D4
+                { note: 261.63, duration: 0.6 }, // C4
+                { note: 349.23, duration: 0.6 }, // F4
+                { note: 329.63, duration: 1.0 }, // E4
+
+                { note: 261.63, duration: 0.4 }, // C4
+                { note: 261.63, duration: 0.2 }, // C4
+                { note: 293.66, duration: 0.6 }, // D4
+                { note: 261.63, duration: 0.6 }, // C4
+                { note: 392.00, duration: 0.6 }, // G4
+                { note: 349.23, duration: 1.0 }, // F4
+
+                { note: 261.63, duration: 0.4 }, // C4
+                { note: 261.63, duration: 0.2 }, // C4
+                { note: 523.25, duration: 0.6 }, // C5
+                { note: 440.00, duration: 0.6 }, // A4
+                { note: 349.23, duration: 0.6 }, // F4
+                { note: 329.63, duration: 0.6 }, // E4
+                { note: 293.66, duration: 0.8 }, // D4
+
+                { note: 466.16, duration: 0.4 }, // Bb4
+                { note: 466.16, duration: 0.2 }, // Bb4
+                { note: 440.00, duration: 0.6 }, // A4
+                { note: 349.23, duration: 0.6 }, // F4
+                { note: 392.00, duration: 0.6 }, // G4
+                { note: 349.23, duration: 1.2 }  // F4
+            ];
+
+            // Calculate loop count to guarantee at least 60 seconds
+            const singleRunDuration = notes.reduce((total, item) => total + item.duration, 0);
+            const targetDuration = 60.0; // 60 seconds (1 minute)
+            const repeatCount = Math.ceil(targetDuration / singleRunDuration);
+
+            let currentTime = ctx.currentTime + 0.1;
+
+            for (let loop = 0; loop < repeatCount; loop++) {
+                notes.forEach(item => {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(item.note, currentTime);
+
+                    gain.gain.setValueAtTime(0.3, currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, currentTime + item.duration - 0.05);
+
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+
+                    osc.start(currentTime);
+                    osc.stop(currentTime + item.duration);
+
+                    currentTime += item.duration;
+                });
+            }
+        }
+    </script>
+</body>
+  </html>
+  
